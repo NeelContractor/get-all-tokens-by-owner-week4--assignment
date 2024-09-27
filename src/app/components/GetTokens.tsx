@@ -1,20 +1,21 @@
 "use client";
-import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token"; // Use TOKEN_PROGRAM_ID instead of TOKEN_2022_PROGRAM_ID for now
-import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { getTokenMetadata, TOKEN_2022_PROGRAM_ID } from "@solana/spl-token"; 
 import { clusterApiUrl, Connection, PublicKey } from "@solana/web3.js";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 
 interface Tokens {
     mint: string;
     amount: number;
+    name: any,
+    symbol: any,
+    uri: any,
 }
 
 const GetTokens: React.FC = () => {
     const [tokenData, setTokenData] = useState<Tokens[] | null>(null);
-    const [publicKey,setPublicKey] = useState<string | null>(null)
+    const [publicKey, setPublicKey] = useState<string | null>(null)
     const connection = new Connection(clusterApiUrl("devnet"));
 
-    // Fetch tokens owned by the wallet
     async function fetchTokensByOwner() {
         if(!publicKey) throw new Error("please Provide publicKey")
         try {
@@ -23,25 +24,33 @@ const GetTokens: React.FC = () => {
             const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
                 ownerPublicKey,
                 {
-                    programId: TOKEN_2022_PROGRAM_ID, // Try TOKEN_PROGRAM_ID
+                    programId: TOKEN_2022_PROGRAM_ID, 
                 }
             );
 
             console.log("Token accounts found:", tokenAccounts.value.length);
-            const tokens: Tokens[] = tokenAccounts.value.map((tokenAccountInfo: any) => {
-                const tokenInfo = tokenAccountInfo.account.data.parsed.info;
-                const mintAddress = tokenInfo.mint;
-                const tokenAmount = parseFloat(tokenInfo.tokenAmount.uiAmount) || 0;
+            const tokens: Tokens[] = await Promise.all(
+                tokenAccounts.value.map(async (tokenAccountInfo: any) => {
+                    const tokenInfo = tokenAccountInfo.account.data.parsed.info;
+                    const mintAddress = tokenInfo.mint;
+                    const tokenAmount = parseFloat(tokenInfo.tokenAmount.uiAmount) || 0;
 
-                console.log("mintaddress ===",mintAddress);
 
-                connection.get
+                        const metadata = await getTokenMetadata(connection,new PublicKey(mintAddress));
+                        const tokenName = metadata?.name || "Unknown";
+                        const tokenSymbol = metadata?.symbol || "N/A";
+                        const tokenUri = metadata?.uri || "";
 
-                return {
-                    mint: mintAddress,
-                    amount: tokenAmount,
-                };
-            });
+                        console.log("uri: ", tokenUri);
+
+                    return {
+                        mint: mintAddress,
+                        amount: tokenAmount,
+                        name: tokenName,
+                        symbol: tokenSymbol,
+                        uri: tokenUri
+                    };
+            }));
 
             setTokenData(tokens);
         } catch (error) {
@@ -69,11 +78,16 @@ const GetTokens: React.FC = () => {
                 {tokenData?.length ? (
                     tokenData.map((value, index) => (
                         <React.Fragment key={index}>
-                            <div className="border rounded-lg border-gray-400 p-3 m-2">
-                                <p className="text-lg font-bold">Token Mint Address: {value.mint}</p>
-                                <p className="text-base font-bold">- Token Mint Amount: {value.amount}</p>
+                            <div className="flex border rounded-lg border-gray-400 p-3 m-2">
+                                <div className="w-40 truncate">
+                                    <a href={value.uri} target="_blank" rel="noopener noreferrer" className="flex items-center">{value.uri}</a>
+                                </div>
+                                <div className="ml-4">
+                                    <a href={value.mint} className="text-base font-bold">Token Name: {value.name}</a>
+                                    <p className="text-base font-semibold">Token Amount: {value.amount} {value.symbol}</p>
+                                </div>
                             </div>
-                            <br />
+                        <br />
                         </React.Fragment>
                     ))
                 ) : (
