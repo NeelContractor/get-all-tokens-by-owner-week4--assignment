@@ -35,13 +35,12 @@ const GetTokens: React.FC = () => {
                     const mintAddress = tokenInfo.mint;
                     const tokenAmount = parseFloat(tokenInfo.tokenAmount.uiAmount) || 0;
 
+                    const metadata = await getTokenMetadata(connection,new PublicKey(mintAddress));
+                    const tokenName = metadata?.name || "Unknown";
+                    const tokenSymbol = metadata?.symbol || "N/A";
+                    const tokenUri = metadata?.uri || "";
 
-                        const metadata = await getTokenMetadata(connection,new PublicKey(mintAddress));
-                        const tokenName = metadata?.name || "Unknown";
-                        const tokenSymbol = metadata?.symbol || "N/A";
-                        const tokenUri = metadata?.uri || "";
-
-                        console.log("uri: ", tokenUri);
+                    console.log("uri: ", tokenUri);
 
                     return {
                         mint: mintAddress,
