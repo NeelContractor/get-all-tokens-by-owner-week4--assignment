@@ -1,6 +1,7 @@
 "use client";
 import { getTokenMetadata, TOKEN_2022_PROGRAM_ID } from "@solana/spl-token"; 
 import { clusterApiUrl, Connection, PublicKey } from "@solana/web3.js";
+import Image from "next/image";
 import React, { useState } from "react";
 
 interface Tokens {
@@ -9,6 +10,7 @@ interface Tokens {
     name: any,
     symbol: any,
     uri: any,
+    imageUri: any,
 }
 
 const GetTokens: React.FC = () => {
@@ -27,29 +29,44 @@ const GetTokens: React.FC = () => {
                     programId: TOKEN_2022_PROGRAM_ID, 
                 }
             );
-
+            
             console.log("Token accounts found:", tokenAccounts.value.length);
             const tokens: Tokens[] = await Promise.all(
                 tokenAccounts.value.map(async (tokenAccountInfo: any) => {
                     const tokenInfo = tokenAccountInfo.account.data.parsed.info;
                     const mintAddress = tokenInfo.mint;
                     const tokenAmount = parseFloat(tokenInfo.tokenAmount.uiAmount) || 0;
-
-                    const metadata = await getTokenMetadata(connection,new PublicKey(mintAddress));
+            
+                    const metadata = await getTokenMetadata(connection, new PublicKey(mintAddress));
+                    console.log(metadata);
+                    
                     const tokenName = metadata?.name || "Unknown";
                     const tokenSymbol = metadata?.symbol || "N/A";
                     const tokenUri = metadata?.uri || "";
-
-                    console.log("uri: ", tokenUri); // outputs: https://cdn.100xdevs.com/metadata.json
-
+            
+                    // console.log("uri: ", tokenUri);
+                    
+                    let imageUrl = "";
+                    if (tokenUri) {
+                        try {
+                            const response = await fetch(tokenUri);
+                            const metadataJson = await response.json();
+                            imageUrl = metadataJson.image || "";
+                            console.log("Image URL:", imageUrl);
+                        } catch (error) {
+                            console.error("Error fetching metadata:", error);
+                        }
+                    }
+            
                     return {
                         mint: mintAddress,
                         amount: tokenAmount,
                         name: tokenName,
                         symbol: tokenSymbol,
-                        uri: tokenUri
+                        uri: tokenUri,
+                        imageUri: imageUrl
                     };
-            }));
+                }))
 
             setTokenData(tokens);
         } catch (error) {
@@ -78,10 +95,11 @@ const GetTokens: React.FC = () => {
                     {tokenData?.length ? (
                         tokenData.map((value, index) => (
                             <React.Fragment key={index}>
-                                <div className="flex border rounded-lg border-gray-400 p-3 m-2">
+                                <div className="flex items-center border rounded-lg border-gray-400 p-3 m-2">
                                     <div className="w-40 truncate">
                                         <a href={value.uri} target="_blank" rel="noopener noreferrer" className="flex items-center">{value.uri}</a>
                                     </div>
+                                    <img src={value.imageUri} alt="Token Logo" width={50} height={20} className="rounded-full"/>
                                     <div className="ml-4">
                                         <a href={value.mint} className="text-base font-bold">Token Name: {value.name}</a>
                                         <p className="text-base font-semibold">Token Amount: {value.amount} {value.symbol}</p>
