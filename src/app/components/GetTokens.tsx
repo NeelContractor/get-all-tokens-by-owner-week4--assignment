@@ -76,18 +76,18 @@ const GetTokens: React.FC = () => {
 
     return (
         <>
-            <div className="grid border rounded-lg drop-shadow-md p-10">
+            <div className="grid border border-gray-800 rounded-lg drop-shadow-md p-10">
                 <div className="flex justify-center">
                     <input 
                         type="text" 
-                        className="border rounded-lg text-base font-semibold p-2 mb-3 outline-none w-8/12" 
+                        className="border rounded-lg bg-gray-900 border-none text-base font-semibold p-2 mb-3 outline-none w-8/12" 
                         placeholder="Enter your PublicKey here."
                         onChange={(e) => setPublicKey(e.target.value)}
                     />
                 </div>
                 <div className="flex justify-center">
                     <button 
-                        className="border bg-blue-600 text-base font-semibold rounded-lg p-3"
+                        className="border border-gray-800 text-gray-300 text-base font-semibold rounded-lg p-3"
                         onClick={fetchTokensByOwner}
                     >Get Tokens</button>
                 </div>
